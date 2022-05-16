@@ -57,7 +57,7 @@
       const average = records.reduce((a, c) => a + c) / records.length;
       $result.textContent = `현재 ${current}ms, 평균: ${average}ms`;
 
-      const topFive = records.sort((a, b) => b - a).slice(0, 5);
+      const topFive = records.sort((a, b) => a - b).slice(0, 5);
       topFive.forEach((top, idx) => {
           $result.append(
               document.createElement('br'),
