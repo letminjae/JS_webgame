@@ -63,7 +63,7 @@ function onSubmit(event) {
   searched = null;
   firstClick = true;
   clearInterval(interval);
-  $tbody.innerHTML = '';
+  $tbody.innerHTML = ''; // 재시작할때 이전에 있던 tbody가 있기때문에 비워줌
   drawTable();
   startTime = new Date();
   interval = setInterval(() => {
@@ -77,7 +77,7 @@ function plantMine() {
   const candidate = Array(row * cell).fill().map((arr, i) => {
     return i;
   });
-  const shuffle = [];
+  const shuffle = []; // 지뢰 요소 위치
   while (candidate.length > row * cell - mine) {
     const chosen = candidate.splice(Math.floor(Math.random() * candidate.length), 1)[0]; 
     shuffle.push(chosen);

@@ -792,16 +792,202 @@ class Monster extends Unit {
 - 이벤트 루프 시각화 영상: (https://www.youtube.com/watch?v=8aGhZQkoFbQ)
 
 ## 지뢰찾기
-### 
+### 이때 까지 배운 개념을 심화하고, 재귀 함수를 이용해서 구현했습니다.
 
 <img src='https://user-images.githubusercontent.com/96935557/194033745-2c529406-fdf8-4ad3-85ba-5f84a914c232.gif'>
 
+- 간단하게 배열 만드는 방법 : Array(요소 개수).fill().map((arr, i) => {return i});
+
+- 이차원 배열 만드는 법 : 이중 for문 사용
+```js
+  const data = [];
+  for (let i = 0; i < row; i++) {
+    const rowData = [];
+    data.push(rowData);
+    for (let j = 0; j < cell; j++) {
+      rowData.push(CODE.NORMAL);
+    }
+  }
+```
+
+- 이차원 배열에 지뢰심기 : 지뢰의 행렬을 알아야하는데, 행은 지뢰숫자 / 열, 열은 지뢰숫자 / 열의 나머지로 로직을 짠다.
+```js
+  for (let k = 0; k < shuffle.length; k++) {
+    const ver = Math.floor(shuffle[k] / cell); // 7번째 줄
+    const hor = shuffle[k] % cell; // 1번째 칸
+    data[ver][hor] = CODE.MINE;
+  }
+```
+
+- 우클릭으로 깃발 꽂기 : 우클릭은 contextmenu 이벤트가 따로 존재, 메뉴가 뜨는 기본동작이 있기에 e.preventDefault() 해주기.
+  - 우클릭은 총 3가지로 존재한다. 물음표거나, 깃발이거나, 빈칸이거나.
+  - 하지만 그 칸이 지뢰라면 지뢰일때 물음표거나, 깃발이거나, 빈칸이거나.
+  - 총 6개의 조건문으로 표현을해야한다.
+  ```js
+  function onRightClick(event) {
+    event.preventDefault();
+    const target = event.target;
+    const rowIndex = target.parentNode.rowIndex;
+    const cellIndex = target.cellIndex;
+    const cellData = data[rowIndex][cellIndex];
+    if (cellData === CODE.MINE) { // 지뢰면
+      data[rowIndex][cellIndex] = CODE.QUESTION_MINE; // 물음표 지뢰로
+      target.className = 'question';
+      target.textContent = '?';
+    } else if (cellData === CODE.QUESTION_MINE) { // 물음표 지뢰면
+      data[rowIndex][cellIndex] = CODE.FLAG_MINE; // 깃발 지뢰로
+      target.className = 'flag';
+      target.textContent = '!';
+    } else if (cellData === CODE.FLAG_MINE) { // 깃발 지뢰면
+      data[rowIndex][cellIndex] = CODE.MINE; // 지뢰로
+      target.className = '';
+      target.textContent = '';
+    } else if (cellData === CODE.NORMAL) { // 닫힌 칸이면
+      data[rowIndex][cellIndex] = CODE.QUESTION; // 물음표로
+      target.className = 'question';
+      target.textContent = '?';
+    } else if (cellData === CODE.QUESTION) { // 물음표면
+      data[rowIndex][cellIndex] = CODE.FLAG; // 깃발으로
+      target.className = 'flag';
+      target.textContent = '!';
+    } else if (cellData === CODE.FLAG) { // 깃발이면
+      data[rowIndex][cellIndex] = CODE.NORMAL; // 닫힌 칸으로
+      target.className = '';
+      target.textContent = '';
+    }
+  }
+  ```
+
+- 주변 지뢰 개수 세기 : 좌클릭 이벤트를 구현해야하는 경우.
+  - 지뢰가 있을때 : 지뢰를 표시하면서 게임이 터지고 재시작.
+  - 지뢰가 없을때 : 주변에 지뢰가 몇개 있는지를 표시함.
+    - 지뢰의 경우는 : CODE.MINE 뿐만 아니라  CODE.QUESTION_MINE, CODE.FLAG_MINE 포함
+    - 모서리 또는 가장 바깥쪽 칸을 확인할때는 주변칸이 undefined이 뜨니 옵셔널체이닝 사용.
+    ```js
+    function countMine(rowIndex, cellIndex) {
+      const mines = [CODE.MINE, CODE.QUESTION_MINE, CODE.FLAG_MINE];
+      let i = 0;
+      mines.includes(data[rowIndex - 1]?.[cellIndex - 1]) && i++; // 1번칸
+      mines.includes(data[rowIndex - 1]?.[cellIndex]) && i++; // 2번칸
+      mines.includes(data[rowIndex - 1]?.[cellIndex + 1]) && i++; // 3번칸
+      mines.includes(data[rowIndex][cellIndex - 1]) && i++; // 4번칸 (5번칸 칸 나자신)
+      mines.includes(data[rowIndex][cellIndex + 1]) && i++; // 6번칸
+      mines.includes(data[rowIndex + 1]?.[cellIndex - 1]) && i++; // 7번칸
+      mines.includes(data[rowIndex + 1]?.[cellIndex]) && i++; // 8번칸
+      mines.includes(data[rowIndex + 1]?.[cellIndex + 1]) && i++; // 9번칸
+      return i;
+    }
+    // 논리 연산자 && : 앞에 코드가 true라면 뒤의 코드를 실행하라. and라고 생각할 수도 있지만 논리연산자는 굉장히 많이쓰이는 코드이다.
+    // 논리 연산자 || : 앞에 코드가 false라면 뒤의 코드를 실행하라. or이라고 생각할 수도 있지만, 적절할때 사용!
+    ```
+- *`nullish coalescing : ?? 연산자`* : null과 undefined이면 앞의 코드. 아니라면 뒤의 코드 사용.
+
+- 재귀? : 주변에 빈칸을 한번에 열고싶은 로직 작성.
+  - 함수가 나 자신의 함수를 호출하는 것.
+  - 처음엔 open() 함수로 클릭한 주변 9칸만 여는 코드를 openAround()로 작성했지만, 재귀를 사용하여 주변에 빈칸이 있다면 그주변 9칸도 여는 로직작성.
+  - 허나 `Maximum call stack size exceeded` 발생.
+  - 호출스택을 생각해보면, 기존 openAround() 함수가 끝나지도 않았는데 또 openAround()가 호출되는 상황이 생김. => 호출스택 터짐
+  - => 그렇다면, 호출스택이 바쁘니 백그라운드와 태스크 큐를 좀 써보면 되지않을까 라는 생각을 해야함.
+  - setTimeout(재귀콜백함수, 0) 사용으로 해결!
+  ```js
+  function openAround(rI, cI) {
+    setTimeout(() => {
+      const count = open(rI, cI);
+      if (count === 0) {
+        openAround(rI - 1, cI - 1);
+        openAround(rI - 1, cI);
+        openAround(rI - 1, cI + 1);
+        openAround(rI, cI - 1);
+        openAround(rI, cI + 1);
+        openAround(rI + 1, cI - 1);
+        openAround(rI + 1, cI);
+        openAround(rI + 1, cI + 1);
+      }
+    }, 0);
+  }
+  ```
+  - => 허나 최적화가 안되어서 버벅거림 및 윈도우에 렉걸림 현상발생.
+  - 어떤것이 최적화가 안되어있는가? 굳이 열려있는 빈칸을 계속 9칸씩 여니깐 최적화 문제가 생김. 열다보면 기준칸을 다시 열게됨. 그럼 또 기준칸을 재귀로 염. 무한반복..
+  - 한번 연칸은 다시 열지 않는 방어 코드를 설정해야함
+  ```js
+  // 칸이 열렸던 칸이면 return
+  // data[rowIndex]가 undefined가 될수 있기 때문에 (가장바깥쪽) ?. 옵셔널체이닝사용
+  if (data[rowIndex]?.[cellIndex] >= CODE.OPENED) return;
+  ```
+
+
 ## 2048
-### 
+### 키보드, 마우스 드래그 이벤트 사용을 중점적으로 로직구현
 
-<img src='https://user-images.githubusercontent.com/96935557/194291501-dc60491b-aa7f-4547-be75-9996bfd92335.PNG'>
+<img src='https://user-images.githubusercontent.com/96935557/194492452-96802e4f-bdaf-4373-b3fb-b319f31c19e7.gif'>
 
-- 
+- 이차원 배열 드로잉 ($table -> $fragment -> $tr -> $td) => 랜덤한 곳에 첫 숫자 2 배치 => 이벤트를 통해 유저 게임진행
+
+- document.createDocumentFragment() : fragment를 넣어 성능 향상. tr이 백만개다? 백만번 for문 반복 돌면서 append를 해줘야하는데 드로잉 최적화가 안됨. `fragment는 메모리에만 저장이 되어 테이블에 백만번 계속 작업하는게 아닌 백만개의 fragment를 한번에 드로잉`
+
+- 이동방향 판단하기
+  - keydown, keyup 이벤트 : 키보드를 눌렀다(keydown) 떼는(keyup) 이벤트
+  - mousedown, mouseup, mousemove 이벤트 : 마우스를 누르고(mousedown) 이동하고(mousemove) 떼는(mouseup) 이벤트
+    - 마우스는 상하좌우 어디로 move 했냐를 알기 어렵기때문에, clientX, clientY를 통해 마우스를 누르고 뗐을때의 좌표값을 구해 일일이 상하좌우값을 이벤트리스너에 주어야한다.
+    - Math.abs() : 해당 값의 절댓값을 구해서 반환한다.
+    ```js
+      let startCoord;
+      window.addEventListener('mousedown', (event) => {
+        startCoord = [event.clientX, event.clientY];
+      });
+      window.addEventListener('mouseup', (event) => {
+        const endCoord = [event.clientX, event.clientY];
+        const diffX = endCoord[0] - startCoord[0];
+        const diffY = endCoord[1] - startCoord[1];
+        if (diffX < 0 && Math.abs(diffX) > Math.abs(diffY)) {
+          moveCells('left');
+        } else if (diffX > 0 && Math.abs(diffX) > Math.abs(diffY)) {
+          moveCells('right');
+        } else if (diffY > 0 && Math.abs(diffX) <= Math.abs(diffY)) {
+          moveCells('down');
+        } else if (diffY < 0 && Math.abs(diffX) <= Math.abs(diffY)) {
+          moveCells('up');
+        } 
+      });
+    ```
+  - switch문으로 case : 왼쪽, 오른쪽, 위, 아래로 구분
+  ```js
+  switch (direction) {
+      case 'left': {
+        const newData = [[], [], [], []];
+        data.forEach((rowData, i) => {
+          rowData.forEach((cellData, j) => {
+            if (cellData) { // newData = [2(현재값), 2(이전값), 4] 라면 왼쪽으로 갔을때 [4, 4]가 되겠네?라고 예시를들어 로직구현
+              const currentRow = newData[i] //지금 줄
+              const prevData = currentRow[currentRow.length - 1]; // 이전 값
+              if (prevData === cellData) { // 이전 값과 지금 값이 같으면 합친다
+                const score = parseInt($score.textContent);
+                $score.textContent = score + currentRow[currentRow.length - 1] * 2;
+                currentRow[currentRow.length - 1] *= -2; // 왜 -2인가?
+                // 한번에 합쳐지지 않게 하기 위해서 한번 [-4, 4]로 걸어주고 Math.abs로 [4,4]로 만들어준다.
+              } else {
+                newData[i].push(cellData); 
+              }
+            }
+          });
+        });
+        console.log(newData);
+        [1, 2, 3, 4].forEach((rowData, i) => {
+          [1, 2, 3, 4].forEach((cellData, j) => {
+            data[i][j] = Math.abs(newData[i][j]) || 0;
+          });
+        });
+        break;
+      }
+      case 'right': //...
+      //...
+  }
+  ```
+
+
+- 숫자 합쳐 두배로 만들기
+
+- 승리와 패배 구현
 
 
 ## 두더지 잡기 게임
