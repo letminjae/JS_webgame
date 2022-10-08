@@ -984,16 +984,26 @@ class Monster extends Unit {
   }
   ```
 
-
-- 숫자 합쳐 두배로 만들기
-
-- 승리와 패배 구현
-
-
 ## 두더지 잡기 게임
-### 
+### 이미지를 자연스럽게 움직이는 방법과 비동기 처리를 심화 학습
 
 <img src='https://user-images.githubusercontent.com/96935557/194033760-a0145cbf-7598-429b-97b2-72f144c7af7c.gif'>
 
-- 
+- 두더지가 한 번 올라왔다 내려간 뒤로 다시 올라오지 않는 문제
+  - css에 트랜지션이 1초로 걸려있음 올라가는데 1초, 내려가는데 1초. 허나 hidden을 없애는데는 1초가 소요.
+  - 이벤트 루프로 분석 해보면
+  - 호출 스택 : hidden => remove => hidden => remove ... 반복
+  - 백그라운드 : setInterval(tick, 1000) => setTimeout(add, 1000)
+  - 태스크 큐 : tick => add => tick => add ... 반복
+  - 콘솔을 찍어보면, add 하자말자 바로 remove가 되기때문에 두더지가 안보이는 문제였음.
+  - if (hole) return; 을 사용하여 두더지가 나와있으면 setTimeout을 막아주어 바로 remove가 안되게 방어.
 
+- 두더지를 광클하면 점수가 1점 오르는게 아닌 여러점수가 오르는 경우
+  - element.classList.contains(String) = 해당 요소의 클래스의 유무를 확인해서 boolean값 반환
+  ```js
+      // class 요소의 dead가 들어있지 않으면 이라는 조건을 붙여 score +=1
+      if (!event.target.classList.contains('dead')) {
+        score += 1;
+        $score.textContent = score;
+      }
+  ```
